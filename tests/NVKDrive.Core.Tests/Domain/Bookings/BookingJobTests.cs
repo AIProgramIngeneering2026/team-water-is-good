@@ -52,7 +52,7 @@ public sealed class BookingJobTests
     public void FailedJobRejectsSecondOutcome()
     {
         var job = StartJob();
-        var failure = new ToolError("INSUFFICIENT_SEATS", "The trip is full.", "seatCount");
+        var failure = new BookingJobError("INSUFFICIENT_SEATS", "The trip is full.", "seatCount");
 
         Assert.Null(job.Fail(Lease.Token, Now, failure));
         Assert.Equal("JOB_ALREADY_TERMINAL", job.Confirm(Lease.Token, Now)?.Code);
@@ -90,7 +90,7 @@ public sealed class BookingJobTests
         var job = StartJob();
 
         Assert.Equal("JOB_LEASE_EXPIRED", job.Confirm("other-token", Now)?.Code);
-        Assert.Equal("JOB_LEASE_EXPIRED", job.Fail("other-token", Now, new ToolError("ERROR", "Error."))?.Code);
+        Assert.Equal("JOB_LEASE_EXPIRED", job.Fail("other-token", Now, new BookingJobError("ERROR", "Error."))?.Code);
         Assert.Equal(BookingJobStatus.Processing, job.Status);
         Assert.Equal(Lease, job.Lease);
     }

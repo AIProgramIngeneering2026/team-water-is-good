@@ -22,8 +22,8 @@ public sealed class ToolRegistry
     {
         if (!registrations.TryGetValue(operation, out var registration))
         {
-            return new ToolResult<Func<IToolSession, ITool<TCommand, TResult>>>.Failure(
-                new ToolError("UNKNOWN_OPERATION", $"Operation '{operation}' is not registered.", "operation"));
+            return ToolErrorExtensions.UnknownOperation(operation)
+                .ToFailure<Func<IToolSession, ITool<TCommand, TResult>>>();
         }
 
         if (registration is not Func<IToolSession, ITool<TCommand, TResult>> factory)

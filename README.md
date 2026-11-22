@@ -65,7 +65,7 @@ Created → Processing → Confirmed → Completed
 Для сборки ядра и запуска тестов практики 3 нужен .NET 10 SDK:
 
 ```powershell
-dotnet test tests/NVKDrive.Core.Tests/NVKDrive.Core.Tests.csproj
+dotnet test NVKDrive.sln
 ```
 
 Согласованные контракты ядра описаны в [docs/p3-core.md](docs/p3-core.md).

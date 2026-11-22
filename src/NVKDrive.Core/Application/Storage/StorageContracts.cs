@@ -1,16 +1,5 @@
 namespace NVKDrive.Core;
 
-public enum TripStatus { Active, Completed, Cancelled }
-
-public sealed record Trip(
-    Guid Id, Guid DriverId, int RemainingSeats,
-    DateTimeOffset? DepartureTime, DateTimeOffset? ArrivalTime,
-    TripStatus Status = TripStatus.Active, DateTimeOffset? CompletedAt = null);
-
-public sealed record Booking(
-    Guid Id, Guid TripId, Guid JobId, Guid PassengerId, int SeatCount,
-    BookingJobStatus Status = BookingJobStatus.Confirmed, bool BookingForOthers = false);
-
 public interface ICoreStore
 {
     BookingJob? FindJob(Guid jobId);

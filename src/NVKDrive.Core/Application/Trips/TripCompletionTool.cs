@@ -18,17 +18,17 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
         CancellationToken cancellationToken)
     {
         if (!Enum.IsDefined(command.Reason))
-            return Fail("INVALID_PARAMETER", "Unknown completion reason", "reason");
+            return InvalidParameter("reason", "Unknown completion reason");
 
         if (command.TripId == Guid.Empty)
-            return Fail("INVALID_PARAMETER", "A trip identifier is required", "tripId");
+            return InvalidParameter("tripId", "A trip identifier is required");
 
         var isManual = command.Reason == CompletionReason.Manual;
         if (isManual && (context.UserId is null || context.UserId == Guid.Empty))
-            return Fail("INVALID_PARAMETER", "Manual completion requires a user identifier", "userId");
+            return InvalidParameter("userId", "Manual completion requires a user identifier");
 
         if (!isManual && context.UserId is not null)
-            return Fail("INVALID_PARAMETER", "Automatic completion requires a system context", "userId");
+            return InvalidParameter("userId", "Automatic completion requires a system context");
 
         var trip = session.FindTrip(command.TripId);
         if (trip is null)
@@ -60,7 +60,7 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
                 ?? throw new InvalidOperationException("The booking job is missing");
             var error = job.Complete();
             if (error is not null)
-                return new ToolResult<TripCompletionResult>.Failure(error);
+                return error.ToToolError().ToFailure<TripCompletionResult>();
 
             session.Save(job);
             session.Save(booking with { Status = BookingJobStatus.Completed });
@@ -71,6 +71,9 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
             new TripCompletionResult(trip.Id, nameof(TripStatus.Completed), now, confirmedBookings.Length));
     }
 
+    private static ToolResult<TripCompletionResult> InvalidParameter(string field, string message) =>
+        ToolErrorExtensions.InvalidParameter(field, message).ToFailure<TripCompletionResult>();
+
     private static ToolResult<TripCompletionResult> Fail(string code, string message, string field) =>
-        new ToolResult<TripCompletionResult>.Failure(new ToolError(code, message, field));
+        new ToolError(code, message, field).ToFailure<TripCompletionResult>();
 }

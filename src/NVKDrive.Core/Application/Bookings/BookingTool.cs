@@ -92,7 +92,7 @@ public sealed class BookingTool(IToolSession session) : ITool<BookingCommand, Bo
             ?? throw new InvalidOperationException("The booking job is missing");
         var error = byPassenger ? job.CancelByPassenger() : job.CancelByDriver();
         if (error is not null)
-            return new ToolResult<BookingResult>.Failure(error);
+            return error.ToToolError().ToFailure<BookingResult>();
 
         var cancelledBooking = booking with
         {
@@ -111,8 +111,8 @@ public sealed class BookingTool(IToolSession session) : ITool<BookingCommand, Bo
             new BookingResult(booking.Id, booking.TripId, booking.Status.ToString(), booking.SeatCount, remainingSeats));
 
     private static ToolResult<BookingResult> InvalidParameter(string field, string message) =>
-        Fail("INVALID_PARAMETER", message, field);
+        ToolErrorExtensions.InvalidParameter(field, message).ToFailure<BookingResult>();
 
     private static ToolResult<BookingResult> Fail(string code, string message, string field) =>
-        new ToolResult<BookingResult>.Failure(new ToolError(code, message, field));
+        new ToolError(code, message, field).ToFailure<BookingResult>();
 }

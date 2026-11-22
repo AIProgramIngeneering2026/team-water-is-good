@@ -62,7 +62,7 @@ public sealed class Dispatcher(
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var now = timeProvider.GetUtcNow();
-                return job.Start(new JobLease(workerId, leaseToken!, now + leaseDuration), now);
+                return job.Start(new JobLease(workerId, leaseToken!, now + leaseDuration), now).ToToolError();
             });
             if (startError is not null)
             {
@@ -78,7 +78,7 @@ public sealed class Dispatcher(
         cancellationToken.ThrowIfCancellationRequested();
         if (jobId is Guid claimedId && ReadJob(claimedId)?.Lease?.Token != leaseToken)
         {
-            return new ToolResult<TResult>.Failure(ExpiredLeaseError());
+            return ToolErrorExtensions.ExpiredLease().ToFailure<TResult>();
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -92,7 +92,7 @@ public sealed class Dispatcher(
                 ? store.UpdateJob(failedId, job =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    return job.Fail(leaseToken!, timeProvider.GetUtcNow(), failure.Error);
+                    return job.Fail(leaseToken!, timeProvider.GetUtcNow(), failure.Error.ToBookingJobError()).ToToolError();
                 })
                 : null;
         }
@@ -102,7 +102,7 @@ public sealed class Dispatcher(
                 ? session.Commit(confirmedId, job =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    return job.Confirm(leaseToken!, timeProvider.GetUtcNow());
+                    return job.Confirm(leaseToken!, timeProvider.GetUtcNow()).ToToolError();
                 })
                 : session.Commit();
         }
@@ -132,7 +132,7 @@ public sealed class Dispatcher(
             var result = await factory(session).ExecuteAsync(command, context, cancellationToken);
             return result is ToolResult<TResult>.Success or ToolResult<TResult>.Failure
                 ? result
-                : ToolExecutionFailed<TResult>();
+                : ToolErrorExtensions.ExecutionFailed().ToFailure<TResult>();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -140,24 +140,13 @@ public sealed class Dispatcher(
         }
         catch (Exception)
         {
-            return ToolExecutionFailed<TResult>();
+            return ToolErrorExtensions.ExecutionFailed().ToFailure<TResult>();
         }
-    }
-
-    private static ToolResult<TResult>.Failure ToolExecutionFailed<TResult>()
-    {
-        return new ToolResult<TResult>.Failure(
-            new ToolError("TOOL_EXECUTION_FAILED", "Tool execution failed."));
     }
 
     private void ExpireJob(Guid jobId)
     {
-        store.UpdateJob(jobId, job => job.ExpireLease(timeProvider.GetUtcNow()));
-    }
-
-    private static ToolError ExpiredLeaseError()
-    {
-        return new ToolError("JOB_LEASE_EXPIRED", "The job processing lease has expired.", "leaseToken");
+        store.UpdateJob(jobId, job => job.ExpireLease(timeProvider.GetUtcNow()).ToToolError());
     }
 
     private static TimeSpan ValidateDuration(TimeSpan duration)

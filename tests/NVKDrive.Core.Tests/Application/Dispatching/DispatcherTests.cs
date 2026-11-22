@@ -91,7 +91,7 @@ public sealed class DispatcherTests
         Assert.Equal("TOOL_EXECUTION_FAILED", error.Code);
         Assert.DoesNotContain("private details", error.Message);
         Assert.Equal(BookingJobStatus.Failed, dispatcher.ReadJob(jobId)?.Status);
-        Assert.Equal(error, dispatcher.ReadJob(jobId)?.Error);
+        Assert.Equal(new BookingJobError(error.Code, error.Message, error.Field), dispatcher.ReadJob(jobId)?.Error);
         await AssertNoBookingAsync(bookingId);
     }
 
