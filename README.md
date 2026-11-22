@@ -54,19 +54,21 @@ NVKDrive — учебный сервис для поиска и брониров
 
 ## Инженерный скелет
 
-Основная единица работы — `BookingJob` (запрос на бронирование). Предварительный жизненный цикл:
+Основная единица работы — `BookingJob` (запрос на бронирование). Основной путь:
 
 ```text
-Created → Confirmed → Completed
-    │          │
-    └→ CancelledByPassenger
-               ├→ CancelledByDriver
-               └→ CancelledBecauseTripCancelled
-
-Created → Failed
+Created → Processing → Confirmed → Completed
 ```
 
 Точные допустимые переходы и критерии приёмки зафиксированы в `docs/requirements.md`.
+
+Для сборки ядра и запуска тестов практики 3 нужен .NET 10 SDK:
+
+```powershell
+dotnet test tests/NVKDrive.Core.Tests/NVKDrive.Core.Tests.csproj
+```
+
+Согласованные контракты ядра описаны в [docs/p3-core.md](docs/p3-core.md).
 
 Сервис строится по схеме `request → Job → Dispatcher → Registry → Tool → ToolResult`:
 
