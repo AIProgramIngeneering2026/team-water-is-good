@@ -1,7 +1,11 @@
-using NVKDrive.Core;
-using Xunit;
+using NVKDrive.Application.Bookings;
+using NVKDrive.Application.Storage;
+using NVKDrive.Application.Tools;
+using NVKDrive.Application.Trips;
+using NVKDrive.Domain.Bookings;
+using NVKDrive.Domain.Trips;
 
-namespace NVKDrive.Core.Tests;
+namespace NVKDrive.Core.Tests.Application.Tools;
 
 public sealed class ToolsTests
 {
@@ -57,7 +61,7 @@ public sealed class ToolsTests
         var clock = new TestClock { Now = threshold.AddTicks(-1) };
         var tool = new TripCompletionTool(session, clock);
         var command = new TripCompletionCommand(trip.Id, CompletionReason.Automatic);
-        var context = new ToolContext(Guid.NewGuid(), UserId: null);
+        var context = new ToolContext(Guid.NewGuid(), null);
 
         var earlyResult = await tool.ExecuteAsync(command, context, CancellationToken.None);
 
@@ -89,14 +93,20 @@ public sealed class ToolsTests
         Assert.Equal(trip, session.FindTrip(trip.Id));
     }
 
-    private static Trip NewTrip() => new(
-        Guid.NewGuid(), Guid.NewGuid(), 2, new DateTimeOffset(2026, 11, 22, 10, 0, 0, TimeSpan.Zero), null);
+    private static Trip NewTrip()
+    {
+        return new Trip(
+            Guid.NewGuid(), Guid.NewGuid(), 2, new DateTimeOffset(2026, 11, 22, 10, 0, 0, TimeSpan.Zero), null);
+    }
 
     private sealed class TestClock : TimeProvider
     {
         public DateTimeOffset Now { get; set; }
 
-        public override DateTimeOffset GetUtcNow() => Now;
+        public override DateTimeOffset GetUtcNow()
+        {
+            return Now;
+        }
     }
 
     private sealed class TestSession(Trip trip) : IToolSession
@@ -104,24 +114,49 @@ public sealed class ToolsTests
         private readonly Dictionary<Guid, Booking> bookings = [];
         private Trip currentTrip = trip;
 
-        public Trip? FindTrip(Guid tripId) => currentTrip.Id == tripId ? currentTrip : null;
+        public Trip? FindTrip(Guid tripId)
+        {
+            return currentTrip.Id == tripId ? currentTrip : null;
+        }
 
-        public Booking? FindBooking(Guid bookingId) => bookings.GetValueOrDefault(bookingId);
+        public Booking? FindBooking(Guid bookingId)
+        {
+            return bookings.GetValueOrDefault(bookingId);
+        }
 
-        public BookingJob? FindJob(Guid jobId) => throw new NotSupportedException();
-
-        public IEnumerable<Booking> GetBookings(Guid tripId) =>
-            bookings.Values.Where(booking => booking.TripId == tripId);
-
-        public void Save(Trip updatedTrip) => currentTrip = updatedTrip;
-
-        public void Save(Booking booking) => bookings[booking.Id] = booking;
-
-        public void Save(BookingJob job) => throw new NotSupportedException();
-
-        public ToolError? Commit(Guid? jobId = null, Func<BookingJob, ToolError?>? update = null) =>
+        public BookingJob? FindJob(Guid jobId)
+        {
             throw new NotSupportedException();
+        }
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public IEnumerable<Booking> GetBookings(Guid tripId)
+        {
+            return bookings.Values.Where(booking => booking.TripId == tripId);
+        }
+
+        public void Save(Trip updatedTrip)
+        {
+            currentTrip = updatedTrip;
+        }
+
+        public void Save(Booking booking)
+        {
+            bookings[booking.Id] = booking;
+        }
+
+        public void Save(BookingJob job)
+        {
+            throw new NotSupportedException();
+        }
+
+        public ToolError? Commit(Guid? jobId = null, Func<BookingJob, ToolError?>? update = null)
+        {
+            throw new NotSupportedException();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return ValueTask.CompletedTask;
+        }
     }
 }

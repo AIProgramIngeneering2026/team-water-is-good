@@ -1,18 +1,4 @@
-namespace NVKDrive.Core;
-
-public enum BookingJobStatus
-{
-    Created,
-    Processing,
-    Confirmed,
-    Failed,
-    Completed,
-    CancelledByPassenger,
-    CancelledByDriver,
-    CancelledBecauseTripCancelled
-}
-
-public sealed record JobLease(Guid WorkerId, string Token, DateTimeOffset ExpiresAt);
+namespace NVKDrive.Domain.Bookings;
 
 public sealed class BookingJob(Guid id)
 {
@@ -21,12 +7,15 @@ public sealed class BookingJob(Guid id)
     public JobLease? Lease { get; private set; }
     public BookingJobError? Error { get; private set; }
 
-    public BookingJob Copy() => new(Id)
+    public BookingJob Copy()
     {
-        Status = Status,
-        Lease = Lease,
-        Error = Error
-    };
+        return new BookingJob(Id)
+        {
+            Status = Status,
+            Lease = Lease,
+            Error = Error
+        };
+    }
 
     public BookingJobError? Start(JobLease lease, DateTimeOffset now)
     {
@@ -39,8 +28,10 @@ public sealed class BookingJob(Guid id)
         return null;
     }
 
-    public BookingJobError? Confirm(string leaseToken, DateTimeOffset now) =>
-        FinishProcessing(BookingJobStatus.Confirmed, leaseToken, now);
+    public BookingJobError? Confirm(string leaseToken, DateTimeOffset now)
+    {
+        return FinishProcessing(BookingJobStatus.Confirmed, leaseToken, now);
+    }
 
     public BookingJobError? Fail(string leaseToken, DateTimeOffset now, BookingJobError error)
     {
@@ -60,14 +51,25 @@ public sealed class BookingJob(Guid id)
         return null;
     }
 
-    public BookingJobError? Complete() => CloseConfirmed(BookingJobStatus.Completed);
+    public BookingJobError? Complete()
+    {
+        return CloseConfirmed(BookingJobStatus.Completed);
+    }
 
-    public BookingJobError? CancelByPassenger() => CloseConfirmed(BookingJobStatus.CancelledByPassenger);
+    public BookingJobError? CancelByPassenger()
+    {
+        return CloseConfirmed(BookingJobStatus.CancelledByPassenger);
+    }
 
-    public BookingJobError? CancelByDriver() => CloseConfirmed(BookingJobStatus.CancelledByDriver);
+    public BookingJobError? CancelByDriver()
+    {
+        return CloseConfirmed(BookingJobStatus.CancelledByDriver);
+    }
 
-    public BookingJobError? CancelBecauseTripCancelled() =>
-        CloseConfirmed(BookingJobStatus.CancelledBecauseTripCancelled);
+    public BookingJobError? CancelBecauseTripCancelled()
+    {
+        return CloseConfirmed(BookingJobStatus.CancelledBecauseTripCancelled);
+    }
 
     private BookingJobError? FinishProcessing(
         BookingJobStatus nextStatus,

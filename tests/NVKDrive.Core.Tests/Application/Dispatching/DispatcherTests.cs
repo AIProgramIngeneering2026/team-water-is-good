@@ -1,4 +1,10 @@
-namespace NVKDrive.Core.Tests;
+using NVKDrive.Application.Dispatching;
+using NVKDrive.Application.Tools;
+using NVKDrive.Domain.Bookings;
+using NVKDrive.Domain.Trips;
+using NVKDrive.Infrastructure.Storage;
+
+namespace NVKDrive.Core.Tests.Application.Dispatching;
 
 public sealed class DispatcherTests
 {
@@ -159,9 +165,15 @@ public sealed class DispatcherTests
     {
         private DateTimeOffset now = new(2026, 11, 22, 12, 0, 0, TimeSpan.Zero);
 
-        public override DateTimeOffset GetUtcNow() => now;
+        public override DateTimeOffset GetUtcNow()
+        {
+            return now;
+        }
 
-        public void Advance(TimeSpan amount) => now += amount;
+        public void Advance(TimeSpan amount)
+        {
+            now += amount;
+        }
     }
 
     private sealed class TestTool(

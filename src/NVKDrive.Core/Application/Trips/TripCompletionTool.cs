@@ -1,4 +1,9 @@
-namespace NVKDrive.Core;
+using NVKDrive.Application.Storage;
+using NVKDrive.Application.Tools;
+using NVKDrive.Domain.Bookings;
+using NVKDrive.Domain.Trips;
+
+namespace NVKDrive.Application.Trips;
 
 public sealed class TripCompletionTool(IToolSession session, TimeProvider timeProvider)
     : ITool<TripCompletionCommand, TripCompletionResult>
@@ -46,7 +51,8 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
             var tripTime = trip.ArrivalTime ?? trip.DepartureTime
                 ?? throw new InvalidOperationException("The trip has no arrival or departure time");
             if (now - tripTime < TimeSpan.FromHours(2))
-                return Fail("COMPLETION_TIME_NOT_REACHED", "The automatic completion time has not been reached", "tripId");
+                return Fail("COMPLETION_TIME_NOT_REACHED", "The automatic completion time has not been reached",
+                    "tripId");
         }
 
         var confirmedBookings = session.GetBookings(trip.Id)
@@ -57,7 +63,7 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
         {
             cancellationToken.ThrowIfCancellationRequested();
             var job = session.FindJob(booking.JobId)
-                ?? throw new InvalidOperationException("The booking job is missing");
+                      ?? throw new InvalidOperationException("The booking job is missing");
             var error = job.Complete();
             if (error is not null)
                 return error.ToToolError().ToFailure<TripCompletionResult>();
@@ -71,9 +77,13 @@ public sealed class TripCompletionTool(IToolSession session, TimeProvider timePr
             new TripCompletionResult(trip.Id, nameof(TripStatus.Completed), now, confirmedBookings.Length));
     }
 
-    private static ToolResult<TripCompletionResult> InvalidParameter(string field, string message) =>
-        ToolErrorExtensions.InvalidParameter(field, message).ToFailure<TripCompletionResult>();
+    private static ToolResult<TripCompletionResult> InvalidParameter(string field, string message)
+    {
+        return ToolErrorExtensions.InvalidParameter(field, message).ToFailure<TripCompletionResult>();
+    }
 
-    private static ToolResult<TripCompletionResult> Fail(string code, string message, string field) =>
-        new ToolError(code, message, field).ToFailure<TripCompletionResult>();
+    private static ToolResult<TripCompletionResult> Fail(string code, string message, string field)
+    {
+        return new ToolError(code, message, field).ToFailure<TripCompletionResult>();
+    }
 }

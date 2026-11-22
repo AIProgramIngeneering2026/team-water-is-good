@@ -1,7 +1,6 @@
-using NVKDrive.Core;
-using Xunit;
+using NVKDrive.Domain.Bookings;
 
-namespace NVKDrive.Core.Tests;
+namespace NVKDrive.Core.Tests.Domain.Bookings;
 
 public sealed class BookingJobTests
 {

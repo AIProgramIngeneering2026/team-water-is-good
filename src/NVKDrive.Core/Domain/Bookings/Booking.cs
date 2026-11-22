@@ -1,5 +1,10 @@
-namespace NVKDrive.Core;
+namespace NVKDrive.Domain.Bookings;
 
 public sealed record Booking(
-    Guid Id, Guid TripId, Guid JobId, Guid PassengerId, int SeatCount,
-    BookingJobStatus Status = BookingJobStatus.Confirmed, bool BookingForOthers = false);
+    Guid Id,
+    Guid TripId,
+    Guid JobId,
+    Guid PassengerId,
+    int SeatCount,
+    BookingJobStatus Status = BookingJobStatus.Confirmed,
+    bool BookingForOthers = false);

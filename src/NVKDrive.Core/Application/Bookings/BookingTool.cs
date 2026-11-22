@@ -1,4 +1,9 @@
-namespace NVKDrive.Core;
+using NVKDrive.Application.Storage;
+using NVKDrive.Application.Tools;
+using NVKDrive.Domain.Bookings;
+using NVKDrive.Domain.Trips;
+
+namespace NVKDrive.Application.Bookings;
 
 public sealed class BookingTool(IToolSession session) : ITool<BookingCommand, BookingResult>
 {
@@ -89,7 +94,7 @@ public sealed class BookingTool(IToolSession session) : ITool<BookingCommand, Bo
             return Fail("INVALID_BOOKING_STATE", "The booking is already completed or cancelled", "bookingId");
 
         var job = session.FindJob(booking.JobId)
-            ?? throw new InvalidOperationException("The booking job is missing");
+                  ?? throw new InvalidOperationException("The booking job is missing");
         var error = byPassenger ? job.CancelByPassenger() : job.CancelByDriver();
         if (error is not null)
             return error.ToToolError().ToFailure<BookingResult>();
@@ -106,13 +111,20 @@ public sealed class BookingTool(IToolSession session) : ITool<BookingCommand, Bo
         return Success(cancelledBooking, remainingSeats);
     }
 
-    private static ToolResult<BookingResult> Success(Booking booking, int remainingSeats) =>
-        new ToolResult<BookingResult>.Success(
-            new BookingResult(booking.Id, booking.TripId, booking.Status.ToString(), booking.SeatCount, remainingSeats));
+    private static ToolResult<BookingResult> Success(Booking booking, int remainingSeats)
+    {
+        return new ToolResult<BookingResult>.Success(
+            new BookingResult(booking.Id, booking.TripId, booking.Status.ToString(), booking.SeatCount,
+                remainingSeats));
+    }
 
-    private static ToolResult<BookingResult> InvalidParameter(string field, string message) =>
-        ToolErrorExtensions.InvalidParameter(field, message).ToFailure<BookingResult>();
+    private static ToolResult<BookingResult> InvalidParameter(string field, string message)
+    {
+        return ToolErrorExtensions.InvalidParameter(field, message).ToFailure<BookingResult>();
+    }
 
-    private static ToolResult<BookingResult> Fail(string code, string message, string field) =>
-        new ToolError(code, message, field).ToFailure<BookingResult>();
+    private static ToolResult<BookingResult> Fail(string code, string message, string field)
+    {
+        return new ToolError(code, message, field).ToFailure<BookingResult>();
+    }
 }

@@ -1,4 +1,9 @@
-namespace NVKDrive.Core;
+using NVKDrive.Application.Storage;
+using NVKDrive.Application.Tools;
+using NVKDrive.Domain.Bookings;
+using NVKDrive.Domain.Trips;
+
+namespace NVKDrive.Infrastructure.Storage;
 
 public sealed class InMemoryCoreStore : ICoreStore
 {
@@ -45,7 +50,10 @@ public sealed class InMemoryCoreStore : ICoreStore
         return new Session(this);
     }
 
-    private static ToolError JobNotFound() => new("JOB_NOT_FOUND", "Booking job was not found.", "jobId");
+    private static ToolError JobNotFound()
+    {
+        return new ToolError("JOB_NOT_FOUND", "Booking job was not found.", "jobId");
+    }
 
     private sealed class Session(InMemoryCoreStore store) : IToolTransaction
     {
@@ -55,25 +63,42 @@ public sealed class InMemoryCoreStore : ICoreStore
         private bool committed;
         private bool disposed;
 
-        public Trip? FindTrip(Guid tripId) =>
-            trips.GetValueOrDefault(tripId) ?? store.trips.GetValueOrDefault(tripId);
+        public Trip? FindTrip(Guid tripId)
+        {
+            return trips.GetValueOrDefault(tripId) ?? store.trips.GetValueOrDefault(tripId);
+        }
 
-        public Booking? FindBooking(Guid bookingId) =>
-            bookings.GetValueOrDefault(bookingId) ?? store.bookings.GetValueOrDefault(bookingId);
+        public Booking? FindBooking(Guid bookingId)
+        {
+            return bookings.GetValueOrDefault(bookingId) ?? store.bookings.GetValueOrDefault(bookingId);
+        }
 
-        public BookingJob? FindJob(Guid jobId) =>
-            jobs.GetValueOrDefault(jobId)?.Copy() ?? store.FindJob(jobId);
+        public BookingJob? FindJob(Guid jobId)
+        {
+            return jobs.GetValueOrDefault(jobId)?.Copy() ?? store.FindJob(jobId);
+        }
 
-        public IEnumerable<Booking> GetBookings(Guid tripId) =>
-            bookings.Values.Concat(store.bookings.Values.Where(booking => !bookings.ContainsKey(booking.Id)))
+        public IEnumerable<Booking> GetBookings(Guid tripId)
+        {
+            return bookings.Values.Concat(store.bookings.Values.Where(booking => !bookings.ContainsKey(booking.Id)))
                 .Where(booking => booking.TripId == tripId)
                 .ToArray();
+        }
 
-        public void Save(Trip trip) => trips[trip.Id] = trip;
+        public void Save(Trip trip)
+        {
+            trips[trip.Id] = trip;
+        }
 
-        public void Save(Booking booking) => bookings[booking.Id] = booking;
+        public void Save(Booking booking)
+        {
+            bookings[booking.Id] = booking;
+        }
 
-        public void Save(BookingJob job) => jobs[job.Id] = job.Copy();
+        public void Save(BookingJob job)
+        {
+            jobs[job.Id] = job.Copy();
+        }
 
         public ToolError? Commit(Guid? jobId = null, Func<BookingJob, ToolError?>? update = null)
         {
